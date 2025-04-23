@@ -2,17 +2,17 @@
 
 ## A simplified falling blocks game inspired by Tetris, developed using Java. This project is built to demonstrate our understanding of core Java programming concepts, including object-oriented design, GUI development, and event handling. 
 
-#Features
-## - Graphical interface built using [Swing / JavaFX].
-## - 10x20 grid-based playfield.
-## - Randomized falling shapes.
-## - Player input via arrow keys:
-## - Left/Right to move block
-## - Down to speed up fall
-## - Up to rotate block
-## - Automatic block falling using a timed game loop.
-## - Line-clearing and score tracking.
-## - Game over detection.
+# Features
+### - Graphical interface built using [Swing / JavaFX].
+### - 10x20 grid-based playfield.
+### - Randomized falling shapes.
+### - Player input via arrow keys:
+### - Left/Right to move block
+### - Down to speed up fall
+### - Up to rotate block
+### - Automatic block falling using a timed game loop.
+### - Line-clearing and score tracking.
+### - Game over detection.
 
 Java Concepts Used
 ##- Object-Oriented Programming (classes for Block, Shape, Board, GameManager).

@@ -27,6 +27,8 @@ public class GameBoard {
     private static final int SAVED_PIECE_Y = 200;
     
     // Customizable speeds (in milliseconds)
+    private static final int DAS_DELAY = 133;    // Delay Auto Shift (initial delay)
+    private static final int ARR_RATE = 20;      // Auto Repeat Rate (repeat rate)
     private static final int HORIZONTAL_MOVE_SPEED = 110;  // Left/Right movement speed
     private static final int ROTATION_SPEED = 150;        // Rotation speed
     private static final int SOFT_DROP_SPEED = 50;        // Down movement speed
@@ -43,6 +45,7 @@ public class GameBoard {
     private GraphicsContext gc;
     private Map<KeyCode, Timeline> keyTimelines;
     private Map<KeyCode, Boolean> keyPressed;
+    private Map<KeyCode, Timeline> dasTimelines;
     private boolean isGameOver;
     private Stage stage;
 
@@ -51,6 +54,7 @@ public class GameBoard {
         score = 0;
         keyTimelines = new HashMap<>();
         keyPressed = new HashMap<>();
+        dasTimelines = new HashMap<>();
         isGameOver = false;
         canSave = true;
         spawnNewBlock();
@@ -224,6 +228,7 @@ public class GameBoard {
         isGameOver = false;
         keyTimelines.clear();
         keyPressed.clear();
+        dasTimelines.clear();
         canSave = true;
         spawnNewBlock();
         
@@ -388,13 +393,24 @@ public class GameBoard {
                 keyPressed.put(code, true);
                 handleKeyPress(code);
                 
-                // Create a timeline for key repeat with appropriate speed
-                int repeatSpeed = getRepeatSpeedForKey(code);
-                if (repeatSpeed > 0) {
-                    Timeline timeline = new Timeline(new KeyFrame(Duration.millis(repeatSpeed), e -> handleKeyPress(code)));
-                    timeline.setCycleCount(Timeline.INDEFINITE);
-                    timeline.play();
-                    keyTimelines.put(code, timeline);
+                // Start DAS timer for left/right movement
+                if (code == KeyCode.LEFT || code == KeyCode.RIGHT) {
+                    Timeline dasTimer = new Timeline(new KeyFrame(Duration.millis(DAS_DELAY), e -> {
+                        // After DAS delay, start ARR
+                        Timeline arrTimer = new Timeline(new KeyFrame(Duration.millis(ARR_RATE), e2 -> handleKeyPress(code)));
+                        arrTimer.setCycleCount(Timeline.INDEFINITE);
+                        arrTimer.play();
+                        keyTimelines.put(code, arrTimer);
+                    }));
+                    dasTimer.play();
+                    dasTimelines.put(code, dasTimer);
+                }
+                // Start soft drop timer
+                else if (code == KeyCode.DOWN) {
+                    Timeline softDropTimer = new Timeline(new KeyFrame(Duration.millis(SOFT_DROP_SPEED), e -> handleKeyPress(code)));
+                    softDropTimer.setCycleCount(Timeline.INDEFINITE);
+                    softDropTimer.play();
+                    keyTimelines.put(code, softDropTimer);
                 }
             }
         });
@@ -402,28 +418,21 @@ public class GameBoard {
         scene.setOnKeyReleased(event -> {
             KeyCode code = event.getCode();
             keyPressed.put(code, false);
-            Timeline timeline = keyTimelines.get(code);
-            if (timeline != null) {
-                timeline.stop();
+            
+            // Stop DAS timer
+            Timeline dasTimer = dasTimelines.get(code);
+            if (dasTimer != null) {
+                dasTimer.stop();
+                dasTimelines.remove(code);
+            }
+            
+            // Stop ARR timer
+            Timeline arrTimer = keyTimelines.get(code);
+            if (arrTimer != null) {
+                arrTimer.stop();
                 keyTimelines.remove(code);
             }
         });
-    }
-
-    private int getRepeatSpeedForKey(KeyCode code) {
-        switch (code) {
-            case LEFT:
-            case RIGHT:
-                return HORIZONTAL_MOVE_SPEED;
-            case UP:
-                return ROTATION_SPEED;
-            case DOWN:
-                return SOFT_DROP_SPEED;
-            case SPACE:
-                return HARD_DROP_SPEED;
-            default:
-                return 0;
-        }
     }
 
     private void handleKeyPress(KeyCode code) {

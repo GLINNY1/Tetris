@@ -1,6 +1,6 @@
-# Falling Blocks Game
+# Falling Blocks (Tetris) Multiplayer Game
 
-A simplified Tetris-like game implemented in Java using JavaFX.
+A multiplayer Tetris game built with Java and JavaFX.
 
 ## Features
 
@@ -12,28 +12,49 @@ A simplified Tetris-like game implemented in Java using JavaFX.
 
 ## Requirements
 
-- Java 11 or higher
+- Java 21 or later
 - Maven
 
-## How to Build and Run
+## How to Run
 
-1. Clone the repository
-2. Navigate to the project directory
-3. Build the project:
-   ```bash
-   mvn clean package
-   ```
-4. Run the game:
-   ```bash
-   mvn javafx:run
-   ```
+1. Clone the repository:
+```bash
+git clone https://github.com/GLINNY1/Tetris.git
+cd Tetris
+```
+
+2. Build and run the game:
+```bash
+mvn clean compile javafx:run
+```
+
+## How to Play Multiplayer
+
+### Hosting a Game
+1. Click "Host Game" button
+2. Make sure your firewall allows incoming connections on port 5000
+3. Share your IP address with your friend
+
+### Joining a Game
+1. Click "Join Game" button
+2. Enter the host's IP address
+3. Click OK to connect
 
 ## Controls
 
-- Left Arrow: Move block left
-- Right Arrow: Move block right
-- Down Arrow: Move block down faster
-- Up Arrow: Rotate block
+- Left/Right Arrow: Move piece horizontally
+- Up Arrow: Rotate piece
+- Down Arrow: Soft drop
+- Space: Hard drop
+- C: Save piece
+- R: Restart (when game over)
+
+## Multiplayer Features
+
+- Real-time game state synchronization
+- Visual feedback of opponent's moves
+- Player join/leave notifications
+- Automatic reconnection handling
 
 ## Game Rules
 

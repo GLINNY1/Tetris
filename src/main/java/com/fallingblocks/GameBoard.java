@@ -3,6 +3,8 @@ package com.fallingblocks;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fallingblocks.network.GameClient;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.Scene;
@@ -48,6 +50,9 @@ public class GameBoard {
     private Map<KeyCode, Timeline> dasTimelines;
     private boolean isGameOver;
     private Stage stage;
+    private GameClient gameClient;
+    private Map<String, int[][]> opponentGrids;
+    private boolean isMultiplayer;
 
     public GameBoard() {
         grid = new int[GRID_HEIGHT][GRID_WIDTH];
@@ -57,6 +62,8 @@ public class GameBoard {
         dasTimelines = new HashMap<>();
         isGameOver = false;
         canSave = true;
+        opponentGrids = new HashMap<>();
+        isMultiplayer = false;
         spawnNewBlock();
     }
 
@@ -76,6 +83,23 @@ public class GameBoard {
         startGameLoop();
     }
 
+    public void startMultiplayer(String serverIP) {
+        isMultiplayer = true;
+        gameClient = new GameClient(
+            serverIP,
+            this::handleGameStateUpdate,
+            this::handlePlayerJoined,
+            this::handlePlayerLeft
+        );
+        
+        if (gameClient.connect()) {
+            System.out.println("Connected to multiplayer server at " + serverIP);
+        } else {
+            System.out.println("Failed to connect to multiplayer server at " + serverIP);
+            isMultiplayer = false;
+        }
+    }
+
     private void startGameLoop() {
         gameLoop = new Timeline(new KeyFrame(Duration.millis(FALL_SPEED), e -> update()));
         gameLoop.setCycleCount(Timeline.INDEFINITE);
@@ -91,6 +115,9 @@ public class GameBoard {
                 if (isGameOver()) {
                     gameOver();
                 }
+            }
+            if (isMultiplayer) {
+                sendGameState();
             }
             draw();
         }
@@ -182,6 +209,20 @@ public class GameBoard {
                 for (int j = 0; j < shape[i].length; j++) {
                     if (shape[i][j] != 0) {
                         drawCell(SAVED_PIECE_X / CELL_SIZE + j, SAVED_PIECE_Y / CELL_SIZE + i, savedBlock.getColor());
+                    }
+                }
+            }
+        }
+
+        // Draw opponent grids
+        if (isMultiplayer) {
+            for (Map.Entry<String, int[][]> entry : opponentGrids.entrySet()) {
+                int[][] opponentGrid = entry.getValue();
+                for (int i = 0; i < GRID_HEIGHT; i++) {
+                    for (int j = 0; j < GRID_WIDTH; j++) {
+                        if (opponentGrid[i][j] != 0) {
+                            drawOpponentCell(j, i, opponentGrid[i][j]);
+                        }
                     }
                 }
             }
@@ -482,5 +523,50 @@ public class GameBoard {
             currentBlock.setY(0);
         }
         canSave = false;
+    }
+
+    private void handleGameStateUpdate(String gameState) {
+        // Parse the game state update from opponent
+        String[] parts = gameState.split(",");
+        String playerId = parts[0];
+        int[][] opponentGrid = new int[GRID_HEIGHT][GRID_WIDTH];
+        
+        for (int i = 0; i < GRID_HEIGHT; i++) {
+            for (int j = 0; j < GRID_WIDTH; j++) {
+                opponentGrid[i][j] = Integer.parseInt(parts[1 + i * GRID_WIDTH + j]);
+            }
+        }
+        
+        opponentGrids.put(playerId, opponentGrid);
+        draw(); // Redraw to show opponent's grid
+    }
+
+    private void handlePlayerJoined(String playerId) {
+        System.out.println("Player joined: " + playerId);
+    }
+
+    private void handlePlayerLeft(String playerId) {
+        System.out.println("Player left: " + playerId);
+        opponentGrids.remove(playerId);
+        draw(); // Redraw to remove opponent's grid
+    }
+
+    private void sendGameState() {
+        if (isMultiplayer && gameClient != null && gameClient.isConnected()) {
+            StringBuilder state = new StringBuilder();
+            for (int i = 0; i < GRID_HEIGHT; i++) {
+                for (int j = 0; j < GRID_WIDTH; j++) {
+                    state.append(grid[i][j]).append(",");
+                }
+            }
+            gameClient.sendGameState(state.toString());
+        }
+    }
+
+    private void drawOpponentCell(int x, int y, int color) {
+        gc.setFill(getColorForValue(color).deriveColor(0, 1, 1, 0.5)); // Semi-transparent
+        gc.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        gc.setStroke(Color.GRAY);
+        gc.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
     }
 } 

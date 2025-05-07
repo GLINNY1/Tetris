@@ -7,18 +7,23 @@ import com.fallingblocks.network.GameClient;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class GameBoard {
+public class GameBoard extends Pane {
     private static final int GRID_WIDTH = 10;
     private static final int GRID_HEIGHT = 20;
     private static final int CELL_SIZE = 30;
@@ -53,6 +58,7 @@ public class GameBoard {
     private GameClient gameClient;
     private Map<String, int[][]> opponentGrids;
     private boolean isMultiplayer;
+    private Pane root;
 
     public GameBoard() {
         grid = new int[GRID_HEIGHT][GRID_WIDTH];
@@ -69,7 +75,7 @@ public class GameBoard {
 
     public void start(Stage stage) {
         this.stage = stage;
-        Pane root = new Pane();
+        root = new Pane();
         canvas = new Canvas((GRID_WIDTH + 5) * CELL_SIZE, GRID_HEIGHT * CELL_SIZE);
         gc = canvas.getGraphicsContext2D();
         root.getChildren().add(canvas);
@@ -477,36 +483,31 @@ public class GameBoard {
     }
 
     private void handleKeyPress(KeyCode code) {
+        if (isGameOver) return;
+        
         switch (code) {
             case LEFT:
-                currentBlock.moveLeft();
-                if (!isValidPosition(currentBlock)) {
-                    currentBlock.moveRight();
-                }
+                moveLeft();
                 break;
             case RIGHT:
-                currentBlock.moveRight();
-                if (!isValidPosition(currentBlock)) {
-                    currentBlock.moveLeft();
-                }
+                moveRight();
                 break;
             case DOWN:
-                moveBlockDown();
+                moveDown();
                 break;
             case UP:
-                currentBlock.rotate();
-                if (!isValidPosition(currentBlock)) {
-                    currentBlock.rotateBack();
-                }
+                rotate();
                 break;
             case SPACE:
-                hardDrop();
+                dropDown();
+                break;
+            case ESCAPE:
+                showPauseMenu();
                 break;
             case C:
                 saveBlock();
                 break;
         }
-        draw();
     }
 
     private void saveBlock() {
@@ -568,5 +569,112 @@ public class GameBoard {
         gc.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         gc.setStroke(Color.GRAY);
         gc.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+
+    private void showPauseMenu() {
+        if (gameLoop != null) {
+            gameLoop.stop();
+        }
+        
+        VBox pauseMenu = new VBox(10);
+        pauseMenu.setAlignment(Pos.CENTER);
+        pauseMenu.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8); -fx-padding: 20;");
+        
+        Label titleLabel = new Label("PAUSED");
+        titleLabel.setStyle("-fx-font-size: 24; -fx-text-fill: white;");
+        
+        Button resumeButton = new Button("Resume");
+        Button restartButton = new Button("Restart");
+        Button quitButton = new Button("Quit");
+        
+        // Style the buttons
+        String buttonStyle = "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14; -fx-padding: 10 20; -fx-min-width: 120;";
+        resumeButton.setStyle(buttonStyle);
+        restartButton.setStyle(buttonStyle);
+        quitButton.setStyle(buttonStyle);
+        
+        resumeButton.setOnAction(e -> {
+            root.getChildren().remove(pauseMenu);
+            if (gameLoop != null) {
+                gameLoop.play();
+            }
+        });
+        
+        restartButton.setOnAction(e -> {
+            root.getChildren().remove(pauseMenu);
+            restart();
+            if (gameLoop != null) {
+                gameLoop.play();
+            }
+        });
+        
+        quitButton.setOnAction(e -> {
+            Platform.exit();
+        });
+        
+        pauseMenu.getChildren().addAll(titleLabel, resumeButton, restartButton, quitButton);
+        pauseMenu.setMaxWidth(200);
+        
+        // Center the pause menu on the screen
+        pauseMenu.setLayoutX((canvas.getWidth() - pauseMenu.getMaxWidth()) / 2);
+        pauseMenu.setLayoutY((canvas.getHeight() - pauseMenu.getHeight()) / 2);
+        
+        root.getChildren().add(pauseMenu);
+    }
+
+    private void moveLeft() {
+        if (currentBlock != null) {
+            currentBlock.moveLeft();
+            if (!isValidPosition(currentBlock)) {
+                currentBlock.moveRight();
+            }
+            draw();
+        }
+    }
+
+    private void moveRight() {
+        if (currentBlock != null) {
+            currentBlock.moveRight();
+            if (!isValidPosition(currentBlock)) {
+                currentBlock.moveLeft();
+            }
+            draw();
+        }
+    }
+
+    private void moveDown() {
+        if (currentBlock != null) {
+            moveBlockDown();
+            draw();
+        }
+    }
+
+    private void rotate() {
+        if (currentBlock != null) {
+            currentBlock.rotate();
+            if (!isValidPosition(currentBlock)) {
+                // Try wall kicks: shift left or right by 1, 2, or 3
+                boolean kicked = false;
+                for (int dx : new int[]{-1, 1, -2, 2, -3, 3}) {
+                    currentBlock.setX(currentBlock.getX() + dx);
+                    if (isValidPosition(currentBlock)) {
+                        kicked = true;
+                        break;
+                    }
+                    currentBlock.setX(currentBlock.getX() - dx); // revert if not valid
+                }
+                if (!kicked) {
+                    currentBlock.rotateBack(); // revert rotation if no kick works
+                }
+            }
+            draw();
+        }
+    }
+
+    private void dropDown() {
+        if (currentBlock != null) {
+            hardDrop();
+            draw();
+        }
     }
 } 

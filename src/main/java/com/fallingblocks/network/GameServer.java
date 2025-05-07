@@ -61,6 +61,13 @@ public class GameServer {
                 clients.put(playerId, this);
                 broadcastPlayerJoined(playerId);
 
+                // If there are now 2 players, broadcast START to all
+                if (clients.size() == 2) {
+                    for (ClientHandler client : clients.values()) {
+                        client.out.println("START");
+                    }
+                }
+
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
                     // Handle game state updates
@@ -80,14 +87,16 @@ public class GameServer {
 
         private void broadcastGameState(String playerId, String gameState) {
             String message = "GAME_STATE:" + playerId + ":" + gameState;
-            broadcast(message);
+            for (ClientHandler client : clients.values()) {
+                if (!client.playerId.equals(playerId)) {
+                    client.out.println(message);
+                }
+            }
         }
 
         private void broadcast(String message) {
             for (ClientHandler client : clients.values()) {
-                if (client != this) {
-                    client.out.println(message);
-                }
+                client.out.println(message);
             }
         }
 

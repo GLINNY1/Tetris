@@ -18,16 +18,19 @@ public class GameClient {
     private Consumer<String> onGameStateUpdate;
     private Consumer<String> onPlayerJoined;
     private Consumer<String> onPlayerLeft;
+    private Consumer<Runnable> onStartGame;
     private boolean connected;
 
     public GameClient(String serverIP,
                      Consumer<String> onGameStateUpdate, 
                      Consumer<String> onPlayerJoined,
-                     Consumer<String> onPlayerLeft) {
+                     Consumer<String> onPlayerLeft,
+                     Consumer<Runnable> onStartGame) {
         this.serverIP = serverIP;
         this.onGameStateUpdate = onGameStateUpdate;
         this.onPlayerJoined = onPlayerJoined;
         this.onPlayerLeft = onPlayerLeft;
+        this.onStartGame = onStartGame;
     }
 
     public boolean connect() {
@@ -60,7 +63,18 @@ public class GameClient {
     }
 
     private void handleMessage(String message) {
+        System.out.println("Received from server: " + message); // Debug log
+        if (message.equals("START")) {
+            if (onStartGame != null) {
+                onStartGame.accept(() -> {});
+            }
+            return;
+        }
         String[] parts = message.split(":");
+        if (parts.length < 2) {
+            System.err.println("Malformed message from server: " + message);
+            return;
+        }
         String type = parts[0];
         String playerId = parts[1];
 
@@ -77,6 +91,8 @@ public class GameClient {
                     onGameStateUpdate.accept(gameState);
                 }
                 break;
+            default:
+                System.err.println("Unknown message type: " + type);
         }
     }
 

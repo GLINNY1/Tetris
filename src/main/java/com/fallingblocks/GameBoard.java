@@ -59,6 +59,7 @@ public class GameBoard extends Pane {
     private Map<String, int[][]> opponentGrids;
     private boolean isMultiplayer;
     private Pane root;
+    private boolean waitingForStart = false;
 
     public GameBoard() {
         grid = new int[GRID_HEIGHT][GRID_WIDTH];
@@ -86,16 +87,23 @@ public class GameBoard extends Pane {
         stage.setTitle("Falling Blocks");
         stage.show();
 
-        startGameLoop();
+        if (!isMultiplayer) {
+            startGameLoop();
+        }
     }
 
     public void startMultiplayer(String serverIP) {
         isMultiplayer = true;
+        waitingForStart = true;
         gameClient = new GameClient(
             serverIP,
             this::handleGameStateUpdate,
             this::handlePlayerJoined,
-            this::handlePlayerLeft
+            this::handlePlayerLeft,
+            (ignored) -> Platform.runLater(() -> {
+                waitingForStart = false;
+                startGameLoop();
+            })
         );
         
         if (gameClient.connect()) {
@@ -144,6 +152,15 @@ public class GameBoard extends Pane {
         // Clear the canvas
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        // If waiting for multiplayer start, show waiting message
+        if (isMultiplayer && waitingForStart) {
+            gc.setFill(Color.WHITE);
+            gc.setFont(new Font("Arial", 40));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("Waiting for another player...", canvas.getWidth() / 2, canvas.getHeight() / 2);
+            return;
+        }
 
         // Draw the grid lines
         gc.setStroke(Color.GRAY);

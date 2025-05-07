@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class GameServer {
-    private static final int PORT = 5000;
+    private static final int PORT = 5050;
     private ServerSocket serverSocket;
     private Map<String, ClientHandler> clients;
     private ExecutorService pool;

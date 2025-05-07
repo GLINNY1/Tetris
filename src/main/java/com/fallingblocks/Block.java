@@ -1,7 +1,9 @@
 package com.fallingblocks;
 
+// Importing the Random class from the java.util package
 import java.util.Random;
 
+// Block class for the falling blocks game
 public class Block {
     private static final int[][][] SHAPES = {
         // I shape
@@ -40,10 +42,12 @@ public class Block {
         }
     };
 
+    // shape variables
     private int[][] shape;
     private int x, y;
     private int color;
 
+    // constructor
     public Block() {
         Random random = new Random();
         int index = random.nextInt(SHAPES.length);
@@ -53,6 +57,7 @@ public class Block {
         y = 0;
     }
 
+    // movement methods
     public void moveLeft() {
         x--;
     }
@@ -69,6 +74,7 @@ public class Block {
         y--;
     }
 
+    // rotate
     public void rotate() {
         int[][] rotated = new int[shape[0].length][shape.length];
         for (int i = 0; i < shape.length; i++) {
@@ -79,6 +85,7 @@ public class Block {
         shape = rotated;
     }
 
+    // rotate back
     public void rotateBack() {
         int[][] rotated = new int[shape[0].length][shape.length];
         for (int i = 0; i < shape.length; i++) {
@@ -89,10 +96,12 @@ public class Block {
         shape = rotated;
     }
 
+    // getShape
     public int[][] getShape() {
         return shape;
     }
 
+    // grid coordinates
     public int getX() {
         return x;
     }

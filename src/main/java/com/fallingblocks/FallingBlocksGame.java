@@ -11,7 +11,10 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+// Main class for the Falling Blocks game
 public class FallingBlocksGame extends Application {
+
+    // Start method for the game
     @Override
     public void start(Stage primaryStage) {
         // Create menu scene

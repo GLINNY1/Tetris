@@ -14,7 +14,6 @@ public class GameClient {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private String playerId;
     private Consumer<String> onGameStateUpdate;
     private Consumer<String> onPlayerJoined;
     private Consumer<String> onPlayerLeft;

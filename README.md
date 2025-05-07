@@ -14,6 +14,7 @@ A multiplayer Tetris game built with Java and JavaFX.
 
 - Java 21 or later
 - Maven
+- Javafx
 
 ## How to Run
 

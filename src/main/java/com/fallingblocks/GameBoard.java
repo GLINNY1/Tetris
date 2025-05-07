@@ -23,6 +23,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+// Constructor initializes game state, grid, and control flags
 public class GameBoard extends Pane {
     private static final int GRID_WIDTH = 10;
     private static final int GRID_HEIGHT = 20;
@@ -33,14 +34,12 @@ public class GameBoard extends Pane {
     private static final int SAVED_PIECE_X = GRID_WIDTH * CELL_SIZE + 50;
     private static final int SAVED_PIECE_Y = 200;
     
-    // Customizable speeds (in milliseconds)
+    // customizable speeds in milliseconds
     private static final int DAS_DELAY = 133;    // Delay Auto Shift (initial delay)
     private static final int ARR_RATE = 20;      // Auto Repeat Rate (repeat rate)
-    private static final int HORIZONTAL_MOVE_SPEED = 110;  // Left/Right movement speed
-    private static final int ROTATION_SPEED = 150;        // Rotation speed
     private static final int SOFT_DROP_SPEED = 50;        // Down movement speed
-    private static final int HARD_DROP_SPEED = 0;         // Instant drop
 
+    // Game state variables
     private int[][] grid;
     private Block currentBlock;
     private Block nextBlock;
@@ -50,10 +49,14 @@ public class GameBoard extends Pane {
     private Timeline gameLoop;
     private Canvas canvas;
     private GraphicsContext gc;
+
+    // control flags
     private Map<KeyCode, Timeline> keyTimelines;
     private Map<KeyCode, Boolean> keyPressed;
     private Map<KeyCode, Timeline> dasTimelines;
     private boolean isGameOver;
+
+    // multiplayer variables
     private Stage stage;
     private GameClient gameClient;
     private Map<String, int[][]> opponentGrids;
@@ -61,6 +64,7 @@ public class GameBoard extends Pane {
     private Pane root;
     private boolean waitingForStart = false;
 
+    // constructor initializes game state
     public GameBoard() {
         grid = new int[GRID_HEIGHT][GRID_WIDTH];
         score = 0;
@@ -74,6 +78,7 @@ public class GameBoard extends Pane {
         spawnNewBlock();
     }
 
+    // starts the game
     public void start(Stage stage) {
         this.stage = stage;
         root = new Pane();
@@ -92,6 +97,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // starts the multiplayer game
     public void startMultiplayer(String serverIP) {
         isMultiplayer = true;
         waitingForStart = true;
@@ -106,6 +112,7 @@ public class GameBoard extends Pane {
             })
         );
         
+        // connects to the multiplayer checker
         if (gameClient.connect()) {
             System.out.println("Connected to multiplayer server at " + serverIP);
         } else {
@@ -114,12 +121,14 @@ public class GameBoard extends Pane {
         }
     }
 
+    // starts the game loop
     private void startGameLoop() {
         gameLoop = new Timeline(new KeyFrame(Duration.millis(FALL_SPEED), e -> update()));
         gameLoop.setCycleCount(Timeline.INDEFINITE);
         gameLoop.play();
     }
 
+    // updates the game loop
     private void update() {
         if (!isGameOver) {
             if (!moveBlockDown()) {
@@ -137,17 +146,20 @@ public class GameBoard extends Pane {
         }
     }
 
+    // checks if the game is over
     private boolean isGameOver() {
         // Check if the new block can be placed
         return !isValidPosition(currentBlock);
     }
 
+    // draws the game over screen
     private void gameOver() {
         isGameOver = true;
         gameLoop.stop();
-        draw();  // Draw one final time to show game over screen
+        draw(); 
     }
 
+    // draws the game board
     private void draw() {
         // Clear the canvas
         gc.setFill(Color.BLACK);
@@ -264,6 +276,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // draws the game over screen
     private void drawGameOver() {
         // Draw semi-transparent overlay
         gc.setFill(Color.BLACK.deriveColor(0, 1, 1, 0.8));
@@ -303,6 +316,7 @@ public class GameBoard extends Pane {
         draw();
     }
 
+    // spawns a new block
     private void spawnNewBlock() {
         if (nextBlock == null) {
             nextBlock = new Block();
@@ -311,6 +325,7 @@ public class GameBoard extends Pane {
         nextBlock = new Block();
     }
 
+    // hard drops the block
     private void hardDrop() {
         while (moveBlockDown()) {
             // Keep moving down until we can't anymore
@@ -323,6 +338,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // moves the block down
     private boolean moveBlockDown() {
         currentBlock.moveDown();
         if (!isValidPosition(currentBlock)) {
@@ -332,6 +348,7 @@ public class GameBoard extends Pane {
         return true;
     }
 
+    // places the block
     private void placeBlock() {
         int[][] shape = currentBlock.getShape();
         int x = currentBlock.getX();
@@ -347,6 +364,7 @@ public class GameBoard extends Pane {
         canSave = true;
     }
 
+    // clears the lines
     private void clearLines() {
         int linesCleared = 0;
         for (int i = GRID_HEIGHT - 1; i >= 0; i--) {
@@ -380,6 +398,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // checks if the block is in a valid position
     private boolean isValidPosition(Block block) {
         int[][] shape = block.getShape();
         int x = block.getX();
@@ -400,6 +419,7 @@ public class GameBoard extends Pane {
         return true;
     }
 
+    // gets the drop position
     private int getDropPosition() {
         if (currentBlock == null) return 0;
         
@@ -422,17 +442,20 @@ public class GameBoard extends Pane {
         return y;
     }
 
+    // draws the shadow cell
     private void drawShadowCell(int x, int y, int color) {
         Color shadowColor = getColorForValue(color).deriveColor(0, 1, 1, 0.3);
         gc.setFill(shadowColor);
         gc.fillRect(x * CELL_SIZE + 1, y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
     }
 
+    // draws the cell
     private void drawCell(int x, int y, int color) {
         gc.setFill(getColorForValue(color));
         gc.fillRect(x * CELL_SIZE + 1, y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
     }
 
+    // gets the color for the value
     private Color getColorForValue(int value) {
         switch (value) {
             case 1: return Color.CYAN;
@@ -446,6 +469,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // sets up the input handlers
     private void setupInputHandlers(Scene scene) {
         scene.setOnKeyPressed(event -> {
             KeyCode code = event.getCode();
@@ -499,6 +523,7 @@ public class GameBoard extends Pane {
         });
     }
 
+    // handles the key press
     private void handleKeyPress(KeyCode code) {
         if (isGameOver) return;
         
@@ -527,6 +552,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // saves the block
     private void saveBlock() {
         if (!canSave || isGameOver) return;
         
@@ -543,6 +569,7 @@ public class GameBoard extends Pane {
         canSave = false;
     }
 
+    // handles the game state update
     private void handleGameStateUpdate(String gameState) {
         // Parse the game state update from opponent
         String[] parts = gameState.split(",");
@@ -559,16 +586,19 @@ public class GameBoard extends Pane {
         draw(); // Redraw to show opponent's grid
     }
 
+    // handles the player joined
     private void handlePlayerJoined(String playerId) {
         System.out.println("Player joined: " + playerId);
     }
 
+    // handles the player left
     private void handlePlayerLeft(String playerId) {
         System.out.println("Player left: " + playerId);
         opponentGrids.remove(playerId);
         draw(); // Redraw to remove opponent's grid
     }
 
+    // sends the game state
     private void sendGameState() {
         if (isMultiplayer && gameClient != null && gameClient.isConnected()) {
             StringBuilder state = new StringBuilder();
@@ -581,6 +611,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // draws the opponent cell
     private void drawOpponentCell(int x, int y, int color) {
         gc.setFill(getColorForValue(color).deriveColor(0, 1, 1, 0.5)); // Semi-transparent
         gc.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
@@ -588,6 +619,7 @@ public class GameBoard extends Pane {
         gc.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
     }
 
+    // shows the pause menu
     private void showPauseMenu() {
         if (gameLoop != null) {
             gameLoop.stop();
@@ -639,6 +671,7 @@ public class GameBoard extends Pane {
         root.getChildren().add(pauseMenu);
     }
 
+    // moves the block left
     private void moveLeft() {
         if (currentBlock != null) {
             currentBlock.moveLeft();
@@ -649,6 +682,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // moves the block right
     private void moveRight() {
         if (currentBlock != null) {
             currentBlock.moveRight();
@@ -659,6 +693,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // moves the block down
     private void moveDown() {
         if (currentBlock != null) {
             moveBlockDown();
@@ -666,6 +701,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // rotates the block
     private void rotate() {
         if (currentBlock != null) {
             currentBlock.rotate();
@@ -688,6 +724,7 @@ public class GameBoard extends Pane {
         }
     }
 
+    // drops the block
     private void dropDown() {
         if (currentBlock != null) {
             hardDrop();

@@ -59,10 +59,12 @@ public class GameServer {
 
                 // Add client to the game
                 clients.put(playerId, this);
+                System.out.println("Client connected: " + playerId + ". Total clients: " + clients.size());
                 broadcastPlayerJoined(playerId);
 
                 // If there are now 2 players, broadcast START to all
                 if (clients.size() == 2) {
+                    System.out.println("Two clients connected. Sending START to all.");
                     for (ClientHandler client : clients.values()) {
                         client.out.println("START");
                     }

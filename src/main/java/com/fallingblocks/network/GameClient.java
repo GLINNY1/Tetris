@@ -65,6 +65,7 @@ public class GameClient {
     private void handleMessage(String message) {
         System.out.println("Received from server: " + message); // Debug log
         if (message.equals("START")) {
+            System.out.println("Received START from server. Starting game loop.");
             if (onStartGame != null) {
                 onStartGame.accept(() -> {});
             }
